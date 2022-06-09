@@ -13,6 +13,7 @@
  */
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 #include <windows.h>
 #include <GL/glut.h>
@@ -22,6 +23,9 @@ float rotationSpeed01 = 0.0;
 float rotationSpeed02 = 0.0;
 float rotationSpeed03 = 0.0;
 float selfAngle = 0.0;
+
+GLuint earthTexture = 0;
+GLuint mercuryTexture = 0;
 
 void createPlanet(float rad){
     float _angle = 0.0f;
@@ -35,6 +39,28 @@ void createPlanet(float rad){
         }
     glEnd();
 }
+
+GLuint LoadTexture(const char* filename, int width, int height){
+       GLuint texture;
+       unsigned char* data;
+       FILE* file;
+       file=fopen(filename, "rb");
+       if(file==NULL)return 0;
+       data=(unsigned char*)malloc(width * height * 3);
+       fread(data,width * height * 3,1,file);
+       fclose(file);
+       glGenTextures(1,&texture);
+       glBindTexture(GL_TEXTURE_2D,texture);
+       glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+       glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+       glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+       glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+       glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+       glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,data);
+       free(data);
+       return texture;
+}
+
 void scene(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
@@ -51,12 +77,17 @@ void scene(){
     //merkur
     createPlanet(12.0);
     glPushMatrix();
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_GEN_S);
         glTranslatef(12 * cos(rotationSpeed/0.25), 0, 12.0 * sin(rotationSpeed/0.25));
         glRotatef(selfAngle, 0.0, 1.0, 0.0);
         glDisable(GL_LIGHTING);
+        glBindTexture(GL_TEXTURE_2D, mercuryTexture);
         glColor3f(0.0,0.7,0.4); //zeleno
         glutSolidSphere(1.5, 15, 15);
         glEnable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_GEN_S);
     glPopMatrix();
 
     //venera
@@ -72,12 +103,18 @@ void scene(){
     //zemlja
     createPlanet(27.0);
     glPushMatrix();
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_GEN_S);
+
         glTranslatef(27.0*cos(rotationSpeed02/0.25), 0.0, 27.0*sin(rotationSpeed02/0.25));
         glRotatef(selfAngle, 0.0f, 1.0f, 0.0f);
         glDisable(GL_LIGHTING);
+        glBindTexture(GL_TEXTURE_2D, earthTexture);
         glColor3f(0.0, 0.5, 0.9); //plavo
         glutSolidSphere(3.5, 15, 15);
         glEnable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_GEN_S);
     glPopMatrix();
 
     //jupter
@@ -161,5 +198,7 @@ int main(int argc, char *argv[])
     glutKeyboardFunc(handleKeys);
     glutTimerFunc(25, spining, 0);
 
+    earthTexture = LoadTexture("./textures/zemlja.jpg", 256, 256);
+    mercuryTexture = LoadTexture("./textures/merkur.jpg", 256,256);
     glutMainLoop();
 }
